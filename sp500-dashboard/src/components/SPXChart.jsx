@@ -23,13 +23,14 @@ function buildShapes(dates, declineZones, activeThresholds, startIdx, endIdx) {
       if (zone[i] && !inZone) {
         inZone = true;
         zoneStart = dates[i];
-      } else if ((!zone[i] || i === endIdx) && inZone) {
+      }
+      if (inZone && (!zone[i] || i === endIdx)) {
         shapes.push({
           type: "rect",
           xref: "x",
           yref: "paper",
           x0: zoneStart,
-          x1: dates[zone[i] && i === endIdx ? i : i - 1],
+          x1: dates[zone[i] ? i : i - 1],
           y0: 0,
           y1: 1,
           fillcolor: color,

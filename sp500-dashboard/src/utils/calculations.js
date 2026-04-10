@@ -4,9 +4,9 @@
  */
 
 /**
- * Identify decline periods for a given threshold.
- * A decline period starts when price drops >= threshold% from a local high,
- * and ends when price rises >= threshold% from the local low.
+ * Identify decline periods using standard drawdown-from-running-max.
+ * A date is "in decline" when price is >= threshold% below its running peak.
+ * The running peak resets naturally when price sets a new high.
  *
  * @param {number[]} prices - SPX close prices
  * @param {number} declineThreshold - e.g. 5, 10, 20 (percent)
@@ -17,46 +17,19 @@ export function identifyDeclinePeriods(prices, declineThreshold) {
   const isDecline = new Array(n).fill(false);
   const threshold = declineThreshold / 100;
 
-  let peak = prices[0];
-  let trough = prices[0];
-  let inDecline = false;
-  let declineStart = 0;
+  let peak = -Infinity;
 
-  for (let i = 1; i < n; i++) {
-    if (!inDecline) {
-      if (prices[i] > peak) {
-        peak = prices[i];
-        trough = prices[i];
-      }
-      if (prices[i] < trough) {
-        trough = prices[i];
-      }
-      // Check if we've declined enough from peak
-      if ((peak - trough) / peak >= threshold) {
-        inDecline = true;
-        declineStart = i;
-        // Mark from the start of the decline (peak)
-        for (let j = i; j >= 0; j--) {
-          if (prices[j] >= peak * 0.999) {
-            declineStart = j;
-            break;
-          }
-        }
-        for (let j = declineStart; j <= i; j++) {
-          isDecline[j] = true;
-        }
-      }
-    } else {
+  for (let i = 0; i < n; i++) {
+    const price = prices[i];
+    if (price == null) continue;
+
+    if (price > peak) {
+      peak = price;
+    }
+
+    const drawdown = (peak - price) / peak;
+    if (drawdown >= threshold) {
       isDecline[i] = true;
-      if (prices[i] < trough) {
-        trough = prices[i];
-      }
-      // Check if we've recovered enough from trough
-      if ((prices[i] - trough) / trough >= threshold) {
-        inDecline = false;
-        peak = prices[i];
-        trough = prices[i];
-      }
     }
   }
 
