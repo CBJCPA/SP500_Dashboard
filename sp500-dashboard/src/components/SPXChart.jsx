@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import Plot from "react-plotly.js";
+import Plot from "./PlotlyChart";
 
 const THRESHOLD_CONFIG = {
   5: { label: "5% Decline", color: "rgba(96, 165, 250, 0.15)", borderColor: "#60a5fa" },

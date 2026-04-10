@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import Plot from "react-plotly.js";
+import Plot from "./PlotlyChart";
 
 const INDICATOR_META = {
   hy_spread: {
