@@ -91,7 +91,7 @@ function App() {
 
   // Load data
   useEffect(() => {
-    fetch('/data/market_data.json')
+    fetch(import.meta.env.BASE_URL + 'data/market_data.json')
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
