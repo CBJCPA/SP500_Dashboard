@@ -48,29 +48,9 @@ function StatsPanel({
     <div
       className="w-full"
       style={{
-        position: "sticky",
-        bottom: 0,
-        zIndex: 50,
         backgroundColor: "#151829",
-        borderTop: "2px solid #3b82f6",
       }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-2">
-        <h2
-          className="text-sm font-semibold"
-          style={{ color: "#e2e8f0" }}
-        >
-          Signal Analysis
-        </h2>
-        <span
-          className="text-xs px-2 py-0.5 rounded"
-          style={{ backgroundColor: "#1e293b", color: "#60a5fa" }}
-        >
-          {activeDeclineThreshold}% decline
-        </span>
-      </div>
-
       {/* Three-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-4 pb-3">
         {/* Individual Indicator Stats */}

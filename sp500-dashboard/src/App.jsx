@@ -89,6 +89,8 @@ function App() {
   const [endDate, setEndDate] = useState('2025-12-31');
   const [selectedDeclineForStats, setSelectedDeclineForStats] = useState(5);
 
+  const [statsMinimized, setStatsMinimized] = useState(false);
+
   // Load data
   useEffect(() => {
     fetch(import.meta.env.BASE_URL + 'data/market_data.json')
@@ -256,7 +258,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1117] text-slate-200">
+    <div className="h-screen bg-[#0f1117] text-slate-200 flex flex-col overflow-hidden">
       {/* Header */}
       <DateRangeSelector
         startDate={startDate}
@@ -268,9 +270,8 @@ function App() {
         onExport={handleExport}
       />
 
-      {/* Main Content */}
-      <div className="px-4 pb-64">
-        {/* SPX Price Chart */}
+      {/* SPX Chart - pinned at top */}
+      <div className="px-4 flex-shrink-0">
         <SPXChart
           data={data}
           declineZones={declineZones}
@@ -280,7 +281,7 @@ function App() {
         />
 
         {/* Decline Threshold Selector for Stats */}
-        <div className="flex items-center justify-center gap-4 my-4">
+        <div className="flex items-center justify-center gap-4 my-2">
           <span className="text-xs text-slate-500 uppercase tracking-wider">Stats for decline threshold:</span>
           {[5, 10, 20].map((t) => (
             <button
@@ -296,8 +297,10 @@ function App() {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Indicator Panels */}
+      {/* Scrollable Indicator Panels */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ minHeight: 0 }}>
         <IndicatorPanels
           data={data}
           dateRange={dateRange}
@@ -307,13 +310,30 @@ function App() {
         />
       </div>
 
-      {/* Sticky Stats Panel */}
-      <StatsPanel
-        individualStats={individualStats}
-        combinationStats={combinationStats}
-        declineDurations={declineDurations}
-        activeDeclineThreshold={selectedDeclineForStats}
-      />
+      {/* Minimizable Stats Panel */}
+      <div className="flex-shrink-0" style={{ borderTop: '2px solid #3b82f6' }}>
+        <button
+          onClick={() => setStatsMinimized(!statsMinimized)}
+          className="w-full flex items-center justify-between px-4 py-2 cursor-pointer"
+          style={{ backgroundColor: '#151829' }}
+        >
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>Signal Analysis</h2>
+            <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1e293b', color: '#60a5fa' }}>
+              {selectedDeclineForStats}% decline
+            </span>
+          </div>
+          <span style={{ color: '#64748b', fontSize: 18 }}>{statsMinimized ? '▲' : '▼'}</span>
+        </button>
+        {!statsMinimized && (
+          <StatsPanel
+            individualStats={individualStats}
+            combinationStats={combinationStats}
+            declineDurations={declineDurations}
+            activeDeclineThreshold={selectedDeclineForStats}
+          />
+        )}
+      </div>
     </div>
   );
 }

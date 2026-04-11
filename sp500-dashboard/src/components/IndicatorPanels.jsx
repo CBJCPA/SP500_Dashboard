@@ -215,6 +215,7 @@ function IndicatorPanel({
   signals,
   onIndicatorChange,
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const meta = INDICATOR_META[indicatorId];
   const { startIdx, endIdx } = dateRange;
   const dates = data.dates;
@@ -319,14 +320,27 @@ function IndicatorPanel({
         padding: 16,
       }}
     >
-      {/* Header */}
+      {/* Header - clickable to collapse */}
       <div
+        onClick={() => setCollapsed(!collapsed)}
         style={{
           display: "flex",
           alignItems: "center",
-          marginBottom: 8,
+          marginBottom: collapsed ? 0 : 8,
+          cursor: "pointer",
+          userSelect: "none",
         }}
       >
+        <span
+          style={{
+            color: "#64748b",
+            fontSize: 12,
+            marginRight: 8,
+            flexShrink: 0,
+          }}
+        >
+          {collapsed ? "▶" : "▼"}
+        </span>
         <span
           style={{
             width: 10,
@@ -355,11 +369,13 @@ function IndicatorPanel({
             color: "#64748b",
           }}
         >
-          {meta.direction === "above" ? "Higher = bearish" : "Lower = bearish"}
+          {collapsed ? `Threshold: ${formatThresholdLabel(indicator.threshold, meta.unit)} | Lag: ${indicator.lag}d` : (meta.direction === "above" ? "Higher = bearish" : "Lower = bearish")}
         </span>
       </div>
 
-      {/* Chart */}
+      {/* Chart - collapsible */}
+      {!collapsed && (
+      <>
       <Plot
         data={traceData}
         layout={layout}
@@ -489,6 +505,8 @@ function IndicatorPanel({
           <span>60 days</span>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
