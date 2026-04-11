@@ -279,24 +279,6 @@ function App() {
           dateRange={dateRange}
           onThresholdToggle={handleThresholdToggle}
         />
-
-        {/* Decline Threshold Selector for Stats */}
-        <div className="flex items-center justify-center gap-4 my-2">
-          <span className="text-xs text-slate-500 uppercase tracking-wider">Stats for decline threshold:</span>
-          {[5, 10, 20].map((t) => (
-            <button
-              key={t}
-              onClick={() => setSelectedDeclineForStats(t)}
-              className={`px-4 py-1.5 rounded text-sm font-medium transition-all ${
-                selectedDeclineForStats === t
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-[#1e293b] text-slate-400 hover:bg-[#2d3748]'
-              }`}
-            >
-              {t}%
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Scrollable Indicator Panels */}
@@ -312,19 +294,37 @@ function App() {
 
       {/* Minimizable Stats Panel */}
       <div className="flex-shrink-0" style={{ borderTop: '2px solid #3b82f6' }}>
-        <button
-          onClick={() => setStatsMinimized(!statsMinimized)}
-          className="w-full flex items-center justify-between px-4 py-2 cursor-pointer"
+        <div
+          className="flex items-center justify-between px-4 py-2"
           style={{ backgroundColor: '#151829' }}
         >
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>Signal Analysis</h2>
-            <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1e293b', color: '#60a5fa' }}>
-              {selectedDeclineForStats}% decline
-            </span>
+            <button
+              onClick={() => setStatsMinimized(!statsMinimized)}
+              className="flex items-center gap-2 cursor-pointer"
+              style={{ background: 'none', border: 'none', padding: 0 }}
+            >
+              <span style={{ color: '#64748b', fontSize: 14 }}>{statsMinimized ? '▶' : '▼'}</span>
+              <h2 className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>Signal Analysis</h2>
+            </button>
+            <div className="flex items-center gap-1">
+              {[5, 10, 20].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setSelectedDeclineForStats(t)}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-all cursor-pointer ${
+                    selectedDeclineForStats === t
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:bg-[#2d3748]'
+                  }`}
+                  style={selectedDeclineForStats !== t ? { backgroundColor: '#1e293b' } : {}}
+                >
+                  {t}%
+                </button>
+              ))}
+            </div>
           </div>
-          <span style={{ color: '#64748b', fontSize: 18 }}>{statsMinimized ? '▲' : '▼'}</span>
-        </button>
+        </div>
         {!statsMinimized && (
           <StatsPanel
             individualStats={individualStats}
