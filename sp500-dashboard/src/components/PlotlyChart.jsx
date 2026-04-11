@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, memo } from 'react';
+import { useRef, useEffect, useState, useCallback, memo } from 'react';
 
 let Plotly = null;
 let plotlyLoadPromise = null;
@@ -12,7 +12,7 @@ function loadPlotly() {
   return plotlyLoadPromise;
 }
 
-function PlotlyChart({ data, layout, config, style }) {
+function PlotlyChart({ data, layout, config, style, onHover, onUnhover, crosshairDate }) {
   const containerRef = useRef(null);
   const [error, setError] = useState(null);
   const [ready, setReady] = useState(!!Plotly);
@@ -25,22 +25,63 @@ function PlotlyChart({ data, layout, config, style }) {
     }
   }, []);
 
+  // Build layout with crosshair and disabled zoom
+  const fullLayout = {
+    ...layout,
+    dragmode: false,
+    shapes: [
+      ...(layout?.shapes || []),
+      ...(crosshairDate ? [{
+        type: 'line',
+        xref: 'x',
+        yref: 'paper',
+        x0: crosshairDate,
+        x1: crosshairDate,
+        y0: 0,
+        y1: 1,
+        line: { color: '#6b7280', width: 1, dash: 'dot' },
+        layer: 'above',
+      }] : []),
+    ],
+  };
+
+  const fullConfig = {
+    responsive: true,
+    displayModeBar: false,
+    scrollZoom: false,
+    doubleClick: false,
+    ...(config || {}),
+  };
+
   useEffect(() => {
     if (!ready || !containerRef.current) return;
+    const el = containerRef.current;
     try {
-      Plotly.react(
-        containerRef.current,
-        data || [],
-        layout || {},
-        config || { responsive: true, displayModeBar: false }
-      );
+      Plotly.react(el, data || [], fullLayout, fullConfig);
     } catch (err) {
       setError('Plotly render error: ' + err.message);
     }
+
+    // Attach hover listeners
+    if (onHover) {
+      el.on('plotly_hover', (eventData) => {
+        if (eventData?.points?.[0]?.x) {
+          onHover(eventData.points[0].x);
+        }
+      });
+    }
+    if (onUnhover) {
+      el.on('plotly_unhover', () => onUnhover());
+    }
+
     return () => {
-      try { Plotly.purge(containerRef.current); } catch (_) {}
+      try {
+        el.removeAllListeners?.('plotly_hover');
+        el.removeAllListeners?.('plotly_unhover');
+        Plotly.purge(el);
+      } catch (_) {}
     };
-  }, [data, layout, config, ready]);
+  }, [data, fullLayout, fullConfig, ready]);
 
   if (error) {
     return (

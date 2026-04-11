@@ -59,7 +59,7 @@ function buildHoverText(dates, spxClose, declineZones, activeThresholds, startId
   return texts;
 }
 
-function SPXChart({ data, declineZones, activeThresholds, dateRange, onThresholdToggle }) {
+function SPXChart({ data, declineZones, activeThresholds, dateRange, onThresholdToggle, crosshairDate, onHover, onUnhover }) {
   const { startIdx, endIdx } = dateRange;
   const dates = data.dates;
   const spxClose = data.spx_close;
@@ -183,8 +183,10 @@ function SPXChart({ data, declineZones, activeThresholds, dateRange, onThreshold
         data={traceData}
         layout={layout}
         config={config}
-        useResizeHandler
         style={{ width: "100%", height: "450px" }}
+        crosshairDate={crosshairDate}
+        onHover={onHover}
+        onUnhover={onUnhover}
       />
     </div>
   );

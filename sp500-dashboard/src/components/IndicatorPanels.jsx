@@ -214,6 +214,11 @@ function IndicatorPanel({
   dateRange,
   signals,
   onIndicatorChange,
+  crosshairDate,
+  onHover,
+  onUnhover,
+  presets,
+  onApplyPreset,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const meta = INDICATOR_META[indicatorId];
@@ -362,6 +367,34 @@ function IndicatorPanel({
           {meta.label}
         </span>
         <HelpTooltip text={meta.tooltip} />
+        {/* Preset buttons */}
+        <div
+          style={{ marginLeft: 12, display: "flex", gap: 4 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {[5, 10, 20].map((pct) => {
+            const p = presets?.[pct];
+            return (
+              <button
+                key={pct}
+                onClick={() => onApplyPreset?.(indicatorId, pct)}
+                title={p ? `Threshold: ${formatThresholdLabel(p.threshold, meta.unit)}, Lag: ${p.lag}d, F1: ${(p.f1 * 100).toFixed(0)}%` : "Computing..."}
+                style={{
+                  padding: "2px 8px",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  borderRadius: 4,
+                  border: "1px solid #334155",
+                  background: "#1e293b",
+                  color: pct === 5 ? "#60a5fa" : pct === 10 ? "#fb923c" : "#ef4444",
+                  cursor: "pointer",
+                }}
+              >
+                {pct}%
+              </button>
+            );
+          })}
+        </div>
         <span
           style={{
             marginLeft: "auto",
@@ -380,8 +413,10 @@ function IndicatorPanel({
         data={traceData}
         layout={layout}
         config={config}
-        useResizeHandler
         style={{ width: "100%", height: "200px" }}
+        crosshairDate={crosshairDate}
+        onHover={onHover}
+        onUnhover={onUnhover}
       />
 
       {/* Threshold Slider */}
@@ -517,6 +552,11 @@ function IndicatorPanels({
   indicators,
   onIndicatorChange,
   signals,
+  crosshairDate,
+  onHover,
+  onUnhover,
+  optimalPresets,
+  onApplyPreset,
 }) {
   const indicatorMap = useMemo(() => {
     const map = {};
@@ -542,6 +582,11 @@ function IndicatorPanels({
             dateRange={dateRange}
             signals={signals?.[id]}
             onIndicatorChange={onIndicatorChange}
+            crosshairDate={crosshairDate}
+            onHover={onHover}
+            onUnhover={onUnhover}
+            presets={optimalPresets?.[id]}
+            onApplyPreset={onApplyPreset}
           />
         );
       })}

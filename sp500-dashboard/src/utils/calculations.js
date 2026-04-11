@@ -199,3 +199,61 @@ export function getDateRange(dates, startDate, endDate) {
 
   return { startIdx, endIdx };
 }
+
+/**
+ * Find optimal threshold and lag for an indicator against a decline target.
+ * Searches a grid of threshold/lag values and returns the combination with
+ * the highest F1 score (harmonic mean of precision and recall).
+ *
+ * @param {number[]} values - indicator time series
+ * @param {boolean[]} actual - decline labels from identifyDeclinePeriods
+ * @param {string} direction - 'above' or 'below'
+ * @param {number} threshMin - min threshold to search
+ * @param {number} threshMax - max threshold to search
+ * @param {number} threshStep - threshold step size
+ * @param {number} startIdx - start of date range
+ * @param {number} endIdx - end of date range
+ * @returns {{ threshold: number, lag: number, precision: number, recall: number, f1: number }}
+ */
+export function findOptimalPreset(values, actual, direction, threshMin, threshMax, threshStep, startIdx, endIdx) {
+  let best = { threshold: (threshMin + threshMax) / 2, lag: 0, precision: 0, recall: 0, f1: 0 };
+
+  // Coarse lag search: 0, 5, 10, 15, 20, 30, 45, 60
+  const lagSteps = [0, 5, 10, 15, 20, 30, 45, 60];
+
+  for (let thresh = threshMin; thresh <= threshMax; thresh += threshStep) {
+    for (const lag of lagSteps) {
+      const signal = indicatorSignal(values, thresh, direction, lag);
+      const stats = calculateStats(signal, actual, startIdx, endIdx);
+
+      const f1 = (stats.precision + stats.recall) > 0
+        ? 2 * stats.precision * stats.recall / (stats.precision + stats.recall)
+        : 0;
+
+      if (f1 > best.f1) {
+        best = {
+          threshold: Math.round(thresh * 1000) / 1000,
+          lag,
+          precision: stats.precision,
+          recall: stats.recall,
+          f1,
+        };
+      }
+    }
+  }
+
+  // Fine-tune lag around best: search +/- 5 days in steps of 1
+  const bestThresh = best.threshold;
+  for (let lag = Math.max(0, best.lag - 5); lag <= Math.min(60, best.lag + 5); lag++) {
+    const signal = indicatorSignal(values, bestThresh, direction, lag);
+    const stats = calculateStats(signal, actual, startIdx, endIdx);
+    const f1 = (stats.precision + stats.recall) > 0
+      ? 2 * stats.precision * stats.recall / (stats.precision + stats.recall)
+      : 0;
+    if (f1 > best.f1) {
+      best = { threshold: bestThresh, lag, precision: stats.precision, recall: stats.recall, f1 };
+    }
+  }
+
+  return best;
+}

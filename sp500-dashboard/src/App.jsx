@@ -10,6 +10,7 @@ import {
   calculateStats,
   calculateCombinationStats,
   getDateRange,
+  findOptimalPreset,
 } from './utils/calculations';
 
 const DEFAULT_INDICATORS = [
@@ -90,6 +91,10 @@ function App() {
   const [selectedDeclineForStats, setSelectedDeclineForStats] = useState(5);
 
   const [statsMinimized, setStatsMinimized] = useState(false);
+  const [crosshairDate, setCrosshairDate] = useState(null);
+
+  const handleChartHover = useCallback((date) => setCrosshairDate(date), []);
+  const handleChartUnhover = useCallback(() => setCrosshairDate(null), []);
 
   // Load data
   useEffect(() => {
@@ -127,6 +132,39 @@ function App() {
       20: identifyDeclinePeriods(data.spx_close, 20),
     };
   }, [data]);
+
+  // Optimal presets for each indicator x decline threshold
+  const optimalPresets = useMemo(() => {
+    if (!data || !declineZones[5]) return {};
+    const presets = {};
+    for (const ind of DEFAULT_INDICATORS) {
+      const values = data[ind.dataKey];
+      if (!values) continue;
+      presets[ind.id] = {};
+      for (const pct of [5, 10, 20]) {
+        const actual = declineZones[pct];
+        if (!actual) continue;
+        presets[ind.id][pct] = findOptimalPreset(
+          values, actual, ind.direction,
+          ind.min, ind.max, ind.step * 5, // coarser step for speed
+          dateRange.startIdx, dateRange.endIdx
+        );
+      }
+    }
+    return presets;
+  }, [data, declineZones, dateRange]);
+
+  // Handler for applying a preset
+  const handleApplyPreset = useCallback((indicatorId, pct) => {
+    const preset = optimalPresets[indicatorId]?.[pct];
+    if (!preset) return;
+    setIndicators((prev) =>
+      prev.map((ind) => ind.id === indicatorId
+        ? { ...ind, threshold: preset.threshold, lag: preset.lag }
+        : ind
+      )
+    );
+  }, [optimalPresets]);
 
   // Indicator signals
   const signals = useMemo(() => {
@@ -278,6 +316,9 @@ function App() {
           activeThresholds={activeThresholds}
           dateRange={dateRange}
           onThresholdToggle={handleThresholdToggle}
+          crosshairDate={crosshairDate}
+          onHover={handleChartHover}
+          onUnhover={handleChartUnhover}
         />
       </div>
 
@@ -289,6 +330,11 @@ function App() {
           indicators={indicators}
           onIndicatorChange={handleIndicatorChange}
           signals={signals}
+          crosshairDate={crosshairDate}
+          onHover={handleChartHover}
+          onUnhover={handleChartUnhover}
+          optimalPresets={optimalPresets}
+          onApplyPreset={handleApplyPreset}
         />
       </div>
 
