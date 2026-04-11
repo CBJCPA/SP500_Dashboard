@@ -110,12 +110,12 @@ function SPXChart({ data, declineZones, activeThresholds, dateRange, onThreshold
     paper_bgcolor: "#0f1117",
     font: { color: "#e2e8f0" },
     height: 450,
-    margin: { l: 60, r: 30, t: 50, b: 50 },
+    margin: { l: 60, r: 30, t: 50, b: 30 },
     xaxis: {
       gridcolor: "#1e293b",
       linecolor: "#1e293b",
       zeroline: false,
-      title: { text: "Date", font: { color: "#94a3b8" } },
+      range: [dates[startIdx], dates[endIdx]],
     },
     yaxis: {
       gridcolor: "#1e293b",

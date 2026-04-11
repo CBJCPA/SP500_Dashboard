@@ -277,12 +277,13 @@ function IndicatorPanel({
     paper_bgcolor: "#151829",
     font: { color: "#e2e8f0", size: 11 },
     height: 200,
-    margin: { l: 50, r: 16, t: 8, b: 30 },
+    margin: { l: 60, r: 30, t: 8, b: 30 },
     xaxis: {
       gridcolor: "#1e293b",
       linecolor: "#1e293b",
       zeroline: false,
       tickfont: { size: 9, color: "#64748b" },
+      range: [dates[startIdx], dates[endIdx]],
     },
     yaxis: {
       gridcolor: "#1e293b",
@@ -510,7 +511,7 @@ function IndicatorPanels({
   }, [indicators]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       {INDICATOR_ORDER.map((id) => {
         const indicator = indicatorMap[id];
         if (!indicator) return null;
