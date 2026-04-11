@@ -5,57 +5,36 @@
 
 /**
  * Identify decline periods for a given threshold.
- * A decline period starts when price drops >= threshold% from a local high,
- * and ends when price rises >= threshold% from the local low.
+ * For each date, looks FORWARD: will price decline by >= threshold%
+ * before it rises by >= threshold% from that date's close?
+ * If yes, that date is labeled as a "decline" (the target outcome for prediction).
  *
  * @param {number[]} prices - SPX close prices
  * @param {number} declineThreshold - e.g. 5, 10, 20 (percent)
- * @returns {boolean[]} - true for each date that falls within a decline period
+ * @returns {boolean[]} - true for each date where a decline of threshold% occurs before a rise of threshold%
  */
 export function identifyDeclinePeriods(prices, declineThreshold) {
   const n = prices.length;
   const isDecline = new Array(n).fill(false);
   const threshold = declineThreshold / 100;
 
-  let peak = prices[0];
-  let trough = prices[0];
-  let inDecline = false;
-  let declineStart = 0;
+  for (let i = 0; i < n; i++) {
+    const entryPrice = prices[i];
+    if (entryPrice == null) continue;
 
-  for (let i = 1; i < n; i++) {
-    if (!inDecline) {
-      if (prices[i] > peak) {
-        peak = prices[i];
-        trough = prices[i];
+    const downTarget = entryPrice * (1 - threshold);
+    const upTarget = entryPrice * (1 + threshold);
+
+    for (let j = i + 1; j < n; j++) {
+      if (prices[j] == null) continue;
+      if (prices[j] <= downTarget) {
+        // Price declined threshold% first — this is a decline period
+        isDecline[i] = true;
+        break;
       }
-      if (prices[i] < trough) {
-        trough = prices[i];
-      }
-      // Check if we've declined enough from peak
-      if ((peak - trough) / peak >= threshold) {
-        inDecline = true;
-        declineStart = i;
-        // Mark from the start of the decline (peak)
-        for (let j = i; j >= 0; j--) {
-          if (prices[j] >= peak * 0.999) {
-            declineStart = j;
-            break;
-          }
-        }
-        for (let j = declineStart; j <= i; j++) {
-          isDecline[j] = true;
-        }
-      }
-    } else {
-      isDecline[i] = true;
-      if (prices[i] < trough) {
-        trough = prices[i];
-      }
-      // Check if we've recovered enough from trough
-      if ((prices[i] - trough) / trough >= threshold) {
-        inDecline = false;
-        peak = prices[i];
-        trough = prices[i];
+      if (prices[j] >= upTarget) {
+        // Price rose threshold% first — not a decline period
+        break;
       }
     }
   }
@@ -65,23 +44,35 @@ export function identifyDeclinePeriods(prices, declineThreshold) {
 
 /**
  * Calculate decline duration statistics.
+ * For each contiguous block of decline-labeled dates, measures the number of
+ * days from the start of the block until price recovers back to the entry level.
  */
 export function calculateDeclineDurations(prices, declineThreshold) {
   const isDecline = identifyDeclinePeriods(prices, declineThreshold);
   const n = isDecline.length;
   const durations = [];
 
-  let start = -1;
-  for (let i = 0; i < n; i++) {
-    if (isDecline[i] && start === -1) {
-      start = i;
-    } else if (!isDecline[i] && start !== -1) {
-      durations.push(i - start);
-      start = -1;
+  let i = 0;
+  while (i < n) {
+    if (isDecline[i]) {
+      const entryPrice = prices[i];
+      // Find how long until price recovers to entry level
+      let recovered = false;
+      for (let j = i + 1; j < n; j++) {
+        if (prices[j] != null && prices[j] >= entryPrice) {
+          durations.push(j - i);
+          recovered = true;
+          break;
+        }
+      }
+      if (!recovered) {
+        durations.push(n - i); // Still hasn't recovered by end of data
+      }
+      // Skip to next non-decline day to avoid counting overlapping periods
+      while (i < n && isDecline[i]) i++;
+    } else {
+      i++;
     }
-  }
-  if (start !== -1) {
-    durations.push(n - start);
   }
 
   if (durations.length === 0) {
